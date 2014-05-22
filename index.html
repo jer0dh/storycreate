@@ -1,0 +1,79 @@
+
+<!DOCTYPE html>
+<html lang="en" ng-app="jhStory">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>StoryCreate</title>
+
+ <!--   <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">  -->
+	<link rel="stylesheet" href="./styles/bootstrap.css" /> 
+	<!-- This style for angular-ui when href is not used -->
+    <style>
+	.nav, .pagination, .carousel, .panel-title a { cursor: pointer; }
+	</style>
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body >
+  <div ng-controller='MainController' class="navbar navbar-default navbar-static-top" role="navigation">
+      <div class="container">
+          <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                  <span class="sr-only">Toggle navigation</span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+              </button>
+              <a class="navbar-brand" href="#">StoryCreate</a>
+          </div>
+          <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                  <li><a href="#">About</a></li>
+                  <li ng-class='{disabled:!state.isAuth, active: state.currentPage == "list"}'><a href="./#/list">List</a></li>
+                  <li ng-class='{disabled:!state.isAuth, active: state.currentPage == "edit"}'><a ng-href="./#/editStory/0">Create</a></li>
+
+              </ul>
+              <ul class="nav navbar-nav navbar-right">
+                  <li ng-show="state.isAuth" class="dropdown" ><a class="dropdown-toggle">{{state.currentUser}}</a>
+                      <ul class="dropdown-menu">
+                          <li><a>Settings</a></li>
+                          <li><a>Logout</a></li>
+                      </ul>
+                  </li>
+
+              </ul>
+          </div><!--/.nav-collapse -->
+      </div>
+  </div>
+
+    <div class="container" ng-view>   </div>
+
+	  <footer>
+        <p>© Company 2014</p>
+      </footer>
+
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    	 <script src="./vendor/angular.js"></script>
+	  <script src="./vendor/angular-route.js"></script>
+		<script src="./vendor/angular-cookies.js"></script>
+	 <script src="./vendor/underscore.js"></script>
+	  <script src="./vendor/ui-bootstrap-tpls-0.10.0.js"></script>
+	<script src="./scripts/app.js"></script>
+ <script src="./scripts/controllers/controllers.js"></script>
+    <script src="./scripts/services/services.js"></script>
+	<script src="./scripts/routes.js"></script>
+
+
+   <!--     <script src="./scripts/services/sqlservice.js"></script>
+    <script src="./scripts/filters/filters.js"></script>  -->
+  </body>
+</html>
