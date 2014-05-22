@@ -1,0 +1,76 @@
+<div class="createStory">
+<tabset justified="true" >
+<tab heading="Story Settings">
+<br>
+<form id="createStoryForm" class="form-horizontal" role="form">
+	<div class="form-group">
+		<label for="title" class="col-sm-2 control-label">Story Title</label>
+		<div class="col-sm-10">
+			<input id="title" type="text" class="form-control" ng-model='model.story.title' ng-minlength="1" ng-maxlength="300" required>
+		</div>
+	</div>
+<div class="form-group">
+	<label for="description" class="col-sm-2 control-label">Description</label>
+	<div class="col-sm-10">
+		<textarea class="form-control" rows="2" id="description" type="textarea" ng-model='model.story.description' />
+	</div>
+</div>
+<div class="form-group">
+	<label for="public" class="col-sm-2 control-label">Public?</label>
+	<input id="public" type="checkbox" ng-model='model.story.isPublic' ng-checked="model.story.isPublic">
+</div>
+<button ng-disabled='ctrlState.isSaving' ng-click='save()'><span ng-show='!ctrlState.isNew'>Save</span><span ng-show='ctrlState.isNew'>Save New</span></button>
+</form>
+</tab>
+<tab heading="Add Content" disabled='ctrlState.isNew'>
+<h2>{{model.story.title}}</h2>
+<span ng-show="!ctrlState.isNew">
+	<div class="container">
+	<div class="row" ng-repeat='storyPiece in model.story.storyContent track by $index'>
+			<div class="col-sm-2">User: {{storyPiece.userName}}</div>
+			<div>
+					<textarea class="col-sm-8" ng-model="storyPiece.content" ></textarea>
+			</div>
+	</div>
+	<div class="row">
+			<div class="col-sm-2">User: {{user}}</div>
+			<div>
+					<input class="col-sm-8"  ng-model="ctrlState.newContent" />
+			</div>
+			<div class="col-sm-2">
+				<button ng-click='saveNewContent()'>Save</button>
+			</div>
+	</div>
+	</div>
+</span>
+
+<span ng-show="ctrlState.isNew">
+Please go to the Story Settings tab and save your settings first
+</span>
+</tab>
+<tab heading="View" disabled='ctrlState.isNew'>
+<style>
+.content:hover {
+	background: #dddddd;
+}
+</style>
+
+<div class="container">
+<div class="row">
+<h1 class="title text-center"> {{model.story.title}} </h1>
+</div>
+<div class="row">
+<div class="description col-sm-12 text-center small">{{model.story.description}}</div>
+</div>
+<div class="row">
+<div class="authors col-sm-12 text-center">by <span ng-repeat="author in model.story.authors track by $index">{{author}}  </span></div>
+</div>
+<div class="row">
+<br>
+<div class="story col-sm-12"><span class="content" ng-repeat="storyPiece in model.story.storyContent track by $index" tooltip="{{storyPiece.userName}}">{{storyPiece.content}} </span></div>
+</div>
+</div>
+</tab>
+</tabset>
+
+</div>

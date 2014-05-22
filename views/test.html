@@ -1,0 +1,26 @@
+<table class="table table-striped table-hover">
+    <thead>
+    <tr><td>Title</td><td>description</td><td>Date</td><td>Authors</td><td></td></tr></thead>
+    <tbody>
+    <tr ng-repeat = "story in model.storyList track by $index">
+        <td><a ng-href="#/viewStory/{{story.id}}">{{story.title}}</a></td><td>{{story.description}}</td><td>{{story.dateCreated | date}}</td>
+        <td> <span ng-repeat = "author in story.authors track by $index">{{author}} </span></td><td><button ng-click="getStory(story.id)">Edit</a></tr>
+    </tbody>
+</table>
+<button ng-click="model.getStories()">Get Stories</button>
+<div>Current status: {{state.asyncCount}}</div>
+<div ng-show="isStoryLoaded" class="container">
+    <div class="row">
+        <h1 class="title text-center"> {{model.story.title}} </h1>
+    </div>
+    <div class="row">
+        <div class="description col-sm-12 text-center small">{{model.story.description}}</div>
+    </div>
+    <div class="row">
+        <div class="authors col-sm-12 text-center">by <span ng-repeat="author in model.story.authors">{{author}}  </span></div>
+    </div>
+    <div class="row">
+        <br>
+        <div class="story col-sm-12"><span class="content" ng-repeat="storyPiece in maodel.story.storyContent" tooltip="{{storyPiece.userName}}">{{storyPiece.content}} </span></div>
+    </div>
+</div>

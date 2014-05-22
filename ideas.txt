@@ -1,0 +1,81 @@
+//TODO MinimalPHP login doesn't use PDO mySQL access - possible SQL injection?
+//TODO Test browser refreshes and its effects with state and login
+//TODO Setup authentication with Google Plus
+
+<!---  BEGIN GOOGLE PLUS IDEAS --->
+
+Use google plus javascript library to logon to google plus.. add username and access_token to State and prompt for email address to use for notification.. result - obtains access_token
+pass access_token,email to php service
+php service uses access_token to obtain username and email... if invalid, back to logon
+Check database for username and email, add if not not exists.  Add access_token to table with timer value
+
+Set access-token in header - storyManager and userManager should check access-token - in database and not timed out -
+
+php checkAuth
+    check for access-token in header, if so, compare with authuser table and check timeout, if timed out, logon error returned
+    no access-token, logon error returned
+    if token starts with "basic-", then update timeout to default(3600s) plus current time.
+    possibly later using refresh tokens if timeout for google plus nearing 15 minutes or so.
+
+client-side: on logon error - route to logon page with previous error message - have to be checked on all .error functions
+
+access-token generated via Google Plus or via Basic Auth (basic auth token to start with basic-)
+
+logon page:
+<logon with googleplus>
+or
+<username>
+<password>
+(eventually, a link to create a new user)..initially, already in database
+
+
+if logon with google plus
+get access-token and id - send to server, , check if id in user table,
+    if is,
+        validate access-token with google, updated timeout, update access-token, send success
+    if not
+        ask for email address - send to server,
+    send to server - check for existing email address - if exists back to email address page, else
+    - validate access-token with google, add to authuser table, add timeout from google to current time
+    - check if id in user table, if not add it with email address and name
+add access-token to header
+else
+send username and password to server
+check username and password in authuser table
+if correct, create access token beginning with "basic-" and store in authuser table and add timeout (3600) to current time
+    if not, return error.
+add access-token to header
+users table fields:
+    user_idx (auto), user_name, user_email, user_id
+
+authuser database fields:
+    access-token,user_id (links to users), timeout
+
+     user logon with google
+        validate access-token with google (return error if not)
+        obtain google_id, user name, timeout from google.
+        check access-token in authusers, if exists, delete
+        add access-token, google_id, timeout to authUser table
+        if google_id exists in users table, then return success and access-token
+        if not, add google_id as google-user_id, user name as username to user table, put shortened name in name of users table
+     user logon without google
+        check logon
+            if good,
+                create access-token and timeout
+                get user_id
+                add to authuser database
+                return access-token and success
+            if bad,
+                return error
+     Check Auth
+        confirm access token in authusers
+            if not, return not auth
+            if so, compare timeout to current time
+                if expired, return not auth, expired
+                if ok, make timeout 3600 from current time and return authorized
+
+
+
+
+<!---  END GOOGLE PLUS IDEAS --->
+

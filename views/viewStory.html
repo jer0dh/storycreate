@@ -1,0 +1,21 @@
+<style>
+.content:hover {
+	background: #dddddd;
+}
+</style>
+
+<div class="container">
+<div class="row">
+<h1 class="title text-center"> {{model.story.title}} </h1>
+</div>
+<div class="row">
+<div class="description col-sm-12 text-center small">{{model.story.description}}</div>
+</div>
+<div class="row">
+<div class="authors col-sm-12 text-center">by <span ng-repeat="author in model.story.authors">{{author}}  </span></div>
+</div>
+<div class="row">
+<br>
+<div class="story col-sm-12"><span class="content" ng-repeat="storyPiece in model.story.storyContent" tooltip="{{storyPiece.userName}}">{{storyPiece.content}} </span></div>
+</div>
+</div>

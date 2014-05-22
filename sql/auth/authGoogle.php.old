@@ -1,0 +1,170 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: jerod
+ * Date: 5/19/14
+ * Time: 1:52 PM
+ */
+/* Will need incoming JSON with the following
+{   access-token    : 333..344dd,
+    id              : google ID,
+    email           : if google ID not in authUser database
+                      email will have to be inputted by user
+    name            : if google ID not in authUser database
+                      name should be obtainable by google plus
+
+*/
+/*
+ * Decided that this will have to get ID and name from google
+ * as anything from client is suspect
+ * Also, email can be added later by google user in user settings
+ *
+ * As I changed the logic of what the client expects.  This file renamed to old
+ * and new file will be created.
+ */
+define("DB_HOST", "localhost");
+define("DB_NAME", "story2auth");
+define("DB_USER", "root");
+define("DB_PASS", "");
+
+function getDbConnection() {
+    $db = new PDO('mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset=utf8', DB_USER, DB_PASS);
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    return $db;
+}
+
+function existingId($googleId) {
+    global $result;
+    $db = getDbConnection();
+    $stmt = $db->prepare("SELECT * FROM users WHERE google_id = :id");
+    $stmt->bindValue(':id', $googleId, PDO::PARAM_STR);
+    $stmt->execute();
+    $exists = ($stmt->rowCount()!== 0) ? "true" : "false";
+    $result['existingID'] = "returned " . $exists;
+    return ($stmt->rowCount()!== 0);
+}
+function existingEmail($email) {
+    global $result;
+    $db = getDbConnection();
+    $stmt = $db->prepare("SELECT * FROM users WHERE user_email = :email");
+    $stmt->bindValue(':email', $email, PDO::PARAM_STR);
+    $stmt->execute();
+    $exists = ($stmt->rowCount()!== 0) ? "true" : "false";
+    $result['existingEmail'] = "returned " . $exists ;
+    return ($stmt->rowCount()!== 0);
+}
+
+function existingAccessToken($accessToken) {
+    global $result;
+    $db = getDbConnection();
+    $stmt = $db->prepare("SELECT * FROM users WHERE access_token = :accessToken");
+    $stmt->bindValue(':accessToken', $accessToken, PDO::PARAM_STR);
+    $stmt->execute();
+    $exists = ($stmt->rowCount()!== 0) ? "true" : "false";
+    $result['existingAccessToken'] = "returned " . $exists;
+    return ($stmt->rowCount()!== 0);
+}
+
+function addAuthUser($jsonData) {
+    global $result;
+    $db = getDbConnection();
+    $stmt = $db->prepare("INSERT INTO users (access_token, google_id, user_email, user_name ) VALUES (:accessToken, :id, :email, :uname)");
+    $stmt->bindValue(':accessToken', $jsonData['access-token'], PDO::PARAM_STR);
+    $stmt->bindValue(':id', $jsonData['id'], PDO::PARAM_STR);
+    $stmt->bindValue(':email', $jsonData['email'], PDO::PARAM_STR);
+    $stmt->bindValue(':uname', $jsonData['name'], PDO::PARAM_STR);
+    $stmt->execute();
+    $last = $db->lastInsertId();
+    $result['addAuthUser'] = "addAuthUser: InsertID " . $last;
+    return;
+}
+function addUser($jsonData){
+    global $result;
+    $result['addUser'] = "addUser called";
+}
+
+/**
+ * Takes an $accessToken and curl's googleapis.com to see if it is valid
+ *
+ * @param $accessToken
+ * @return bool
+ */
+function validAccessToken($accessToken) {
+    global $result;
+    if(!function_exists("curl_init")){
+        $result['curlError'] = "curl_init not found";
+    }
+    $url = "https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=" . $accessToken;
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url  );
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    $res = curl_exec($ch);
+    $res = json_decode($res, true);
+    $valid = isset($res['issued_to']) ? "true" : "false";
+    $result['validAccessToken'] = "Returned " . $valid;
+    return isset ($res['issued_to']);
+}
+
+// result is stored here.
+$result = array();
+
+try {
+    /* If not POST, then return error*/
+    if ($_SERVER['REQUEST_METHOD'] != "POST"){
+        throw new Exception("POST request expected");
+    }
+
+    /* Get JSON data */
+    $rawData = file_get_contents("php://input");
+    $jsonData = json_decode($rawData, true); //decode the raw json data and return (true) associative array
+
+    // make sure access-token and id are in json data
+    if(!isset ($jsonData['access-token']) || !isset($jsonData['id'])){
+        throw new Exception("Need access-token and id");
+    }
+
+    // check if id in user table - if not, then need email address
+    $existing = existingId($jsonData['id']);
+    if( !$existing && !isset($jsonData['email']) ){
+        throw new Exception("Need email address");
+    }
+
+    // if not existing but with email, check if email already exists
+    if( !$existing && isset($jsonData['email']) ){
+        if ( existingEmail( $jsonData['email'] ) ) {
+            throw new Exception("Need email address: Email address already exists");
+        }
+    }
+
+    if (!$existing && !isset($jsonData['name'])){
+        // name should be obtained with access-token and id
+        throw new Exception("Need name");
+    }
+
+    if (validAccessToken( $jsonData['access-token']) ){
+        addAuthUser($jsonData);
+        if (!$existing){
+            addUser($jsonData);
+        }
+        if(!existingAccessToken($jsonData['access-token'])){
+            throw new Exception("Problem adding to AuthUser");
+        }
+        if(!existingId($jsonData['id'])) {
+            throw new Exception("Problem adding User to table");
+        }
+        $result['success'] = "Access Token added";
+    }
+} catch (Exception $e) {
+    $result['error'] = $e->getMessage();
+    $json = json_encode($result);
+    header('Content-Type: application/json');
+    header('HTTP/1.1 500 Error');
+    echo $json;
+    return;
+}
+$json = json_encode($result);
+header('Content-Type: application/json');
+echo $json;
+return;
