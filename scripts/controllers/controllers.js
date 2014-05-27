@@ -1,4 +1,84 @@
 
+jh.controller('GPlusController', function($scope, Model, State, $location) {
+
+    $scope.model = Model;
+    $scope.state = State;
+    State.page = "";
+ //   $scope.afToken = document.getElementById('afToken').getAttribute('data-afToken');
+ //   var $div = document.getElementById('theState');
+  //  $scope.theState = $div.getAttribute("data-state");
+  //  console.log($scope.theState);
+
+
+    $scope.test = function(){
+        State.test = State.test + 1;
+        console.log("Test is " + State.test);
+        $location.path('/');
+    };
+    $scope.onSignInCallback = function(authResult, afToken){
+        console.log('controller code got called!');
+        console.log(authResult.code);
+        console.log("in connectServer:");
+        $.ajax({
+            type: 'POST',
+            url: 'http://localhost/storycreate/sql/auth/signin.php' + '/connect?state=' + afToken,
+            contentType: 'application/octet-stream; charset=utf-8',
+            success: function(result) {
+                console.log("success");
+                console.log(result);
+                gapi.client.load('plus','v1',$scope.renderProfile);
+                $('#authOps').show('slow');
+                $('#gConnect').hide();
+            },
+            error: function(e, m, a) {
+                console.log('error in connectServer');
+                console.log(e);
+                console.log(m);
+                console.log(a);
+            },
+            processData: false,
+            data: authResult.code
+        });
+    };
+    $scope.disconnect = function() {
+        // Revoke the server tokens
+        $.ajax({
+            type: 'POST',
+            url: 'http://localhost/storycreate/sql/auth/signin.php' + '/disconnect',
+            async: false,
+            success: function(result) {
+                console.log('revoke response: ' + result);
+                $('#authOps').hide();
+                $('#profile').empty();
+                $('#visiblePeople').empty();
+                $('#authResult').empty();
+                $('#gConnect').show();
+            },
+            error: function(e) {
+                console.log(e);
+            }
+        });
+    };
+    $scope.renderProfile = function() {
+        var request = gapi.client.plus.people.get( {'userId' : 'me'} );
+        request.execute( function(profile) {
+            $('#profile').empty();
+            if (profile.error) {
+                $('#profile').append(profile.error);
+                return;
+            }
+            $('#profile').append(
+                $('<p><img src=\"' + profile.image.url + '\"></p>'));
+            $('#profile').append(
+                $('<p>Hello ' + profile.displayName + '!<br />Tagline: ' +
+                    profile.tagline + '<br />About: ' + profile.aboutMe + '</p>'));
+            if (profile.cover && profile.coverPhoto) {
+                $('#profile').append(
+                    $('<p><img src=\"' + profile.cover.coverPhoto.url + '\"></p>'));
+            }
+        });
+    };
+});
 jh.controller('MainController', function($scope, Model, State) {
 
     $scope.model = Model;
