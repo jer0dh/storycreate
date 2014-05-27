@@ -162,7 +162,8 @@ jh.factory('State', [ '$log', '$http', function($log, $http){
         currentUser         : "tweedb",
         currentUserId       : 2,
         isAuth              : true,
-        currentPage         : "landing"
+        currentPage         : "landing",
+        test                : 0
     };
 
     stateMap.addAsync = function () {

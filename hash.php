@@ -15,7 +15,7 @@ if(!isset($_SESSION['gState'])) {
 } else {
     $state = $_SESSION['gState'];
 }
-
-echo '<div data-state="' . $state .'">hi '. $state . '</div>';
+$mydate = new DateTime();
+echo '<div data-state="' . $state .'">hi '. $mydate->format('U') . '</div>';
 
 
