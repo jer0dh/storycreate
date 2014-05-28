@@ -17,7 +17,9 @@ jh.controller('GPlusController', function($scope, Model, State, $location) {
     };
     $scope.onSignInCallback = function(authResult, afToken){
         console.log('controller code got called!');
-        console.log(authResult.code);
+        console.log(authResult);
+        State.gpplus = {};
+        State.gpplus.accessToken = authResult['access_token'];
         console.log("in connectServer:");
         $.ajax({
             type: 'POST',
@@ -26,6 +28,7 @@ jh.controller('GPlusController', function($scope, Model, State, $location) {
             success: function(result) {
                 console.log("success");
                 console.log(result);
+
                 gapi.client.load('plus','v1',$scope.renderProfile);
                 $('#authOps').show('slow');
                 $('#gConnect').hide();

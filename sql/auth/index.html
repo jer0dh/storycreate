@@ -67,11 +67,16 @@
      * This also obtains the anti-forgery token put into the HTML snippet by the signup.php file and twig template
      * system. This token is passed to the controller function to pass back to the signup.php file.
      *
+     * Finding that it would call onSign
      * @param authResult
      */
     function onSignInCallback(authResult){
+        // This function gets called when button is rendered as well, the following if statement prevents my onSignInCallBack gets called
+        // until the button is actually pressed
+        if (authResult['access_token']) {
         var afToken = document.getElementById('afToken').getAttribute('data-afToken');
         gplusController().onSignInCallback(authResult, afToken);
+       }
     }
 </script>
 

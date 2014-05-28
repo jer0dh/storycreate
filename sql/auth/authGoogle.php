@@ -88,11 +88,32 @@ function deleteAccessToken($accessToken){
     return;
 }
 
+function createStoryAccessToken(){
+    $loop = true;
+    $accessToken = 0;
+    while ($loop) {
+        $accessToken = md5(rand());
+        if(!existingStoryAccessToken($accessToken)){
+            $loop = false;
+        }
+    }
+    return $accessToken;
+}
+
+function existingStoryAccessToken($accessToken){
+    global $cA_AuthUsers;
+    $db = getDbConnection($cA_AuthUsers);
+    $stmt = $db->prepare("SELECT * FROM " . TB_AUTHUSERS . " WHERE story_access_token = :accessToken");
+    $stmt->bindValue(':accessToken',$accessToken, PDO::PARAM_STR);
+    $stmt->execute();
+    return ($stmt->rowCount()!== 0);
+}
 
 /**
  * Adds record in TB_AUTHUSERS table with access-token, google id (with "google-" preceding), and timout
  *
  * @param $googleMeta
+ * @return int|string $storyAccessToken
  */
 function addAuthUser($googleMeta) {
     //TODO : add math to add timeout with current time
@@ -100,13 +121,15 @@ function addAuthUser($googleMeta) {
 //    removeExpiredAuthUser();
     $now = new DateTime();
     $timeout = intval($now->format('U')) + intval($googleMeta['timeout']);
+    $storyAccessToken = createStoryAccessToken();
     $db = getDbConnection($cA_AuthUsers);
-    $stmt = $db->prepare("INSERT INTO " . TB_AUTHUSERS . " (access_token, user_id, timeout ) VALUES (:accessToken, :id, :timeout)");
+    $stmt = $db->prepare("INSERT INTO " . TB_AUTHUSERS . " (access_token, user_id, story_access_token, timeout ) VALUES (:accessToken, :id, :storyAccessToken, :timeout)");
     $stmt->bindValue(':accessToken', $googleMeta['access-token'], PDO::PARAM_STR);
     $stmt->bindValue(':id', "google-" . $googleMeta['id'], PDO::PARAM_STR);
+    $stmt->bindValue(':storyAccessToken', $storyAccessToken, PDO::PARAM_STR);
     $stmt->bindValue(':timeout', $timeout, PDO::PARAM_INT);
     $stmt->execute();
-    return;
+    return $storyAccessToken;
 }
 function generateUniqueUsername($name){
     global  $cA_Users;
@@ -148,8 +171,5 @@ function addUser($googleMeta){
 }
 //TODO: create StoryCreate Access Token for authUsers table to keep from passing around google's access token over the wire
 
-//TODO: Implement timeout..adding timeout to current time in seconds.
 
-//TODO: Check out Angular with index.html and see about moving some code to controller so that access token can be stored
 
-//TODO: Check out issues having this separate html file for login causes with Angular.

@@ -23,29 +23,30 @@ $googleMeta2 = array(
 );
 echo "Adding authUser John Doe <br>";
 
-//addAuthUser($googleMeta);
+$sat = addAuthUser($googleMeta);
 
-echo "Testing if authUser (Id) John Doe Exists<br>";
-
-if(existingAuthUsersId($googleMeta['id'])){
-    echo "Existing id  of John Doe found in authusers<br>";
-    echo "Deleting id of John Doe<br>";
-    deleteAuthUsersId($googleMeta['id']);
-    echo "Testing if delete worked:<br>";
-    if(existingAuthUsersId($googleMeta['id'])){
-        echo "Existing id  of John Doe found in authusers<br>";
-    } else {
-        echo "<em>ERROR:</em>John Doe not found in authuser table<br>";
-    }
-} else {
-    echo "<em>ERROR:</em>John Doe not found in authuser table<br>";
-}
-
-if(existingAuthUsersId($googleMeta['id'])){
-    echo "Existing id  of John Doe found in authusers<br>";
-} else {
-    echo "<em>ERROR:</em>John Doe not found in authuser table<br>";
-}
+//echo "Story access Token = " .  $sat . "<br>";
+//echo "Testing if authUser (Id) John Doe Exists<br>";
+//
+//if(existingAuthUsersId($googleMeta['id'])){
+//    echo "Existing id  of John Doe found in authusers<br>";
+//    echo "Deleting id of John Doe<br>";
+//    deleteAuthUsersId($googleMeta['id']);
+//    echo "Testing if delete worked:<br>";
+//    if(existingAuthUsersId($googleMeta['id'])){
+//        echo "ERROR: Existing id  of John Doe found in authusers<br>";
+//    } else {
+//        echo "John Doe not found in authuser table<br>";
+//    }
+//} else {
+//    echo "<em>ERROR:</em>John Doe not found in authuser table<br>";
+//}
+//
+//if(existingAuthUsersId($googleMeta['id'])){
+//    echo "Existing id  of John Doe found in authusers<br>";
+//} else {
+//    echo "<em>ERROR:</em>John Doe not found in authuser table<br>";
+//}
 //echo "checking if user id found in user table<br>";
 //if(existingId($googleMeta['id'])){
 //    echo "User ID found in User table<br>";
