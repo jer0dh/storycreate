@@ -35,16 +35,15 @@
           <div class="navbar-collapse collapse">
               <ul class="nav navbar-nav">
                   <li><a href="#">About</a></li>
-                  <li ng-class='{disabled:!state.isAuth, active: state.currentPage == "list"}'><a href="./#/list">List</a></li>
-                  <li ng-class='{disabled:!state.isAuth, active: state.currentPage == "edit"}'><a ng-href="./#/editStory/0">Create</a></li>
-                  <li><a href="./sql/auth/signin.php">google</a></li>
+                  <li ng-class='{disabled:!state.auth.isAuth(), active: state.currentPage == "list"}'><a ng-href="./#/list">List</a></li>
+                  <li ng-class='{disabled:!state.auth.isAuth(), active: state.currentPage == "edit"}'><a ng-href="./#/editStory/0">Create</a></li>
+                  <li>{{state.accessToken}}</li>
               </ul>
               <ul class="nav navbar-nav navbar-right">
-                  <li ng-show="state.isAuth" class="dropdown" ><a class="dropdown-toggle">{{state.currentUser}}</a>
+                  <li ng-show="state.auth.isAuth()" class="dropdown" ><a class="dropdown-toggle">{{state.auth.currentUser}}</a>
                       <ul class="dropdown-menu">
                           <li><a>Settings</a></li>
-                          <li><a>Logout</a></li>
-                          <li>{{state.test}}</li>
+                          <li><a ng-click="state.auth.disconnect()">Logout</a></li>
                       </ul>
                   </li>
 
@@ -52,7 +51,7 @@
           </div><!--/.nav-collapse -->
       </div>
   </div>
-    <div ng-include="'./hash.php'"></div>
+
     <div class="container" ng-view>   </div>
 
 	  <footer>

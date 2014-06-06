@@ -79,3 +79,85 @@ authuser database fields:
 
 <!---  END GOOGLE PLUS IDEAS --->
 
+<!---  BEGIN AUTHENTICATION IDEAS --->
+A javascript service Auth
+
+Pages check if authenticated by running Auth.isAuth(), if not, $location.path('/logon')
+
+Auth.isAuth = function(){
+    Check State for SC access-token - if have, return true
+}
+
+Auth.init = function(object) {
+  where object{scAccessToken: 'dkdkdd;a33', optional[gpAccessToken: "ddl3k344.."]}
+  $http.defaults.headers.common['Authorization'] = "Bearer " + user.oauthInfo.access_token;
+}
+
+Auth.disconnect() {
+    call php.disconnect()
+   set State.access-token's to null
+   remove $http.default.headers.common['Authorization']
+}
+
+A PHP file/class for restful API to confirm authenticated by taking SA access-token, checking SQL if contains and checking
+timeout...also a touch function to change timeout to currentTime plus 3600s.
+    - Google timeout won't be the same anymore
+    //todo : look at recording the google refresh token, to be able to change timeout
+    //todo : initially authentication will check with SQL as restful should not have a SESSION, but may need to add to reduce sql usage
+PHP.isAuth(scAccessToken){
+
+}
+PHP.touch(scAccessToken){
+
+}
+PHP.isAuthAndTouch(scAccessToken){
+   if PHP.isAuth then PHP.touch(scAccessToken); return true;
+   else return false
+}
+PHP.getInfo(scAccessToken){
+  return json{username: , email: , }
+  //todo: add image url, settings:{} to be stored and retrieved from user database
+}
+PHP.disconnect(scAccessToken){
+
+}
+
+<!---  END AUTHENTICATION IDEAS --->
+
+<!---  BEGIN SERVER AUTHENTICATION IDEAS --->
+
+facebook, google, logon.php - authenticates user sends the following to a function that will create sc access token,
+    add to authuser database, return sc access token, user_id, user_name
+    parameters: user_id (required - must already be unique.  assumes google and facebook ids are unique to table after adding
+    'google-' and 'facebook-' prefixes.  logon.php will return a unique ID from users table),
+            access-token (optional - 'google-'and 'facebook-' prefixes should already be added. logon.php -none)
+            timeout (optional - if received from third parties, use that, otherwise 3600s)
+            name (optional - from third parties)
+
+            // check to make sure access-token is not in authusers table, delete if is
+            if (existingAccessToken('access-token')){
+                deleteAccessToken('access-token');
+            }
+
+            // check to make sure existing google ID not in Authusers table, delete if is
+            if(existingAuthUsersId('id')){
+                deleteAuthUsersId('id');
+            }
+
+            // create timeout
+            if ! timeout then timeout = 3600
+            ScAccessToken = addAuthUser(id, access-token, timeout);
+
+            // add to story create user database (logon.php will already be there, but maybe not third-party logons)
+            if (! existingId('id')){
+                // add user
+                if ! name then name = 'J. Doe'
+                addUser(id, name);
+                if (! existingId('id')){
+                    return new Response('Unable to add user to '. DB_USERS . ' in table ' . TB_USERS, 401);
+                }
+            }
+
+            $username = getUserName('id');
+
+            return (ScAccessToken, id, $username);

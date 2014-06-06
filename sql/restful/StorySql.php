@@ -59,7 +59,7 @@ class StorySql {
 
         // Get Story Content
         // Go through story content and find all userNames that contributed and add to 'authors' field
-        $stmt2 = $db->prepare("SELECT sc.user_id as userId, username as userName, content, DATE_FORMAT(cdate, '%Y-%m-%dT%H:%i:%sZ') as date FROM story_content as sc, users WHERE story_id = :storyId AND sc.user_id = users.user_id ORDER BY corder");
+        $stmt2 = $db->prepare("SELECT sc.user_id as userId, user_name as userName, content, DATE_FORMAT(cdate, '%Y-%m-%dT%H:%i:%sZ') as date FROM story_content as sc, users WHERE story_id = :storyId AND sc.user_id = users.user_id ORDER BY corder");
         $stmt2->bindValue(':storyId', $storyId, PDO::PARAM_INT);
         $stmt2->execute();
         $results2=$stmt2->fetchAll(PDO::FETCH_ASSOC);
@@ -91,7 +91,7 @@ class StorySql {
         $results=$stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach($results as &$row) {
-            $stmt = $db->prepare("SELECT DISTINCT(username) as userName from users, story_content AS sc WHERE sc.story_id = :storyId AND users.user_id = sc.user_id");
+            $stmt = $db->prepare("SELECT DISTINCT(user_name) as userName from users, story_content AS sc WHERE sc.story_id = :storyId AND users.user_id = sc.user_id");
             $stmt->bindValue(':storyId', $row['id'], PDO::PARAM_STR);
             $stmt->execute();
             $results2 = $stmt->fetchAll(PDO::FETCH_ASSOC);

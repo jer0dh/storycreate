@@ -5,11 +5,13 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
      *  The Model
      *
      */
-    var apiStoryUrl = 'http://localhost/api/story/';
-
+    // the model
     var data = {};
 
-
+    // External resources
+    var apiStoryUrl = 'http://localhost/api/story/';
+    data.logonUrl = './sql/auth/logon/logon.php';
+    data.googleSignInUrl = 'http://localhost/storycreate/sql/auth/google/signin.php';
 
     data.createBlankStory = function() {
         return 		{
@@ -92,7 +94,7 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
                 State.decAsync();
                 console.warn("errorNewStory");
                 console.warn(message);
-            })
+            });
 //TODO: Set storyManager.php to send error back when isset $results['error'] and do something with that.  Do we have separate callbacks if success vs error, or have callback determine if typeof results['error'] != undefined
 
 
@@ -123,10 +125,10 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
 //        return Storage.addNewContent.apply(null, args);
 
         data.story.storyContent.push({
-            userId          : State.currentUserId,
+            userId          : State.auth.currentUserId,
             content         : newContent,
             date            : new Date(),
-            userName        : State.currentUser
+            userName        : State.auth.currentUser
         });
 
         data.saveStory(data.story, callback);
@@ -153,19 +155,45 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
 
 
 
-jh.factory('State', [ '$log', '$http', function($log, $http){
+jh.factory('State', [ '$log', '$http', '$location', function($log, $http, $location){
 
     stateMap = {
         currentController   : "",
         isSaving            : false,
         asyncCount          : 0,
-        currentUser         : "tweedb",
-        currentUserId       : 2,
-        isAuth              : true,
-        currentPage         : "landing",
+        page                : "landing",
         test                : 0
     };
 
+    stateMap.auth = {
+        accessToken                 : null,
+        thirdPartyAccessToken       : null,
+        currentUser                 : "tweedb",
+        currentUserId               : 2,
+
+        isAuth                      : function() {
+            return this.accessToken ? true : false;
+        },
+        init                        : function(scAccessToken, userId, userName, thirdPartyAccessToken) {
+            this.accessToken = scAccessToken;
+            this.currentUserId = userId;
+            this.currentUser = userName;
+            if (typeof(thirdPartyAccessToken) !== 'undefined') {
+                this.thirdPartyAccessToken = thirdPartyAccessToken;
+            }
+            // $http.defaults.headers.common['Authorization'] = "Bearer " + this.accessToken;
+            // -Determined goDaddy php could not find this header (did not have apache_request_headers())
+            //   even when finding a function to manually recreate the apache_request_headers function
+        },
+        disconnect                  : function() {
+            this.accessToken = null;
+            this.thirdPartyAccessToken = null;
+            this.currentUser = "";
+            this.currentUserId = "";
+            $http.defaults.headers.common['Authorization'] = undefined;
+            $location.path('/login');
+        }
+    };
     stateMap.addAsync = function () {
         stateMap.asyncCount++;
     };

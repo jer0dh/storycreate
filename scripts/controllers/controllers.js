@@ -1,9 +1,9 @@
 
-jh.controller('GPlusController', function($scope, Model, State, $location) {
+jh.controller('GPlusController', function($scope, Model, State, $location, $http) {
 
     $scope.model = Model;
     $scope.state = State;
-    State.page = "";
+    State.page = "login";
  //   $scope.afToken = document.getElementById('afToken').getAttribute('data-afToken');
  //   var $div = document.getElementById('theState');
   //  $scope.theState = $div.getAttribute("data-state");
@@ -21,46 +21,52 @@ jh.controller('GPlusController', function($scope, Model, State, $location) {
         State.gpplus = {};
         State.gpplus.accessToken = authResult['access_token'];
         console.log("in connectServer:");
-        $.ajax({
-            type: 'POST',
-            url: 'http://localhost/storycreate/sql/auth/signin.php' + '/connect?state=' + afToken,
-            contentType: 'application/octet-stream; charset=utf-8',
-            success: function(result) {
+        $http({
+            method: 'POST',
+            url: Model.googleSignInUrl + '/connect?state=' + afToken,
+            headers: {'Content-type': 'application/octet-stream; charset=utf-8'},
+            data : authResult.code }).
+            success(function(result) {
                 console.log("success");
                 console.log(result);
-
-                gapi.client.load('plus','v1',$scope.renderProfile);
-                $('#authOps').show('slow');
-                $('#gConnect').hide();
-            },
-            error: function(e, m, a) {
+                if (typeof(result['message']) === 'undefined') { // if not already signed in
+                    State.auth.init(result['scAccessToken'], result['id'], result['user_name'],'google-' + authResult['access_token']);
+                    $('#authOps').show('slow');
+                    $location.path('/list');
+                } else {
+                    $scope.disconnect();
+                    // google token found on machine but php server needs one-time code which is only
+                    // obtained at initial logon.  This is called when the page is initially called
+                    // because google has the \connect post called when signin button is rendered not just
+                    // when pressed.
+                }
+            }).
+            error(function(e, m, a) {
                 console.log('error in connectServer');
                 console.log(e);
                 console.log(m);
                 console.log(a);
-            },
-            processData: false,
-            data: authResult.code
-        });
+            });
+
+
     };
     $scope.disconnect = function() {
+        State.auth.disconnect();
         // Revoke the server tokens
-        $.ajax({
-            type: 'POST',
-            url: 'http://localhost/storycreate/sql/auth/signin.php' + '/disconnect',
-            async: false,
-            success: function(result) {
+        $http({
+            method: 'POST',
+            url:  Model.googleSignInUrl  + '/disconnect'}).
+            success(function(result) {
                 console.log('revoke response: ' + result);
                 $('#authOps').hide();
                 $('#profile').empty();
                 $('#visiblePeople').empty();
                 $('#authResult').empty();
-                $('#gConnect').show();
-            },
-            error: function(e) {
+//                $('#gConnect').show();
+            }).
+            error(function(e) {
                 console.log(e);
-            }
-        });
+            });
     };
     $scope.renderProfile = function() {
         var request = gapi.client.plus.people.get( {'userId' : 'me'} );
@@ -82,6 +88,42 @@ jh.controller('GPlusController', function($scope, Model, State, $location) {
         });
     };
 });
+
+jh.controller('LoginController', function($location, $scope, $http, Model, State){
+    $scope.model = Model;
+    $scope.state = State;
+    State.page = "login";
+
+    $scope.error = false;
+    $scope.errorMessage = "";
+    $scope.usn='';
+    $scope.pass='';
+    $scope.alerts=[];
+
+    $scope.closeAlert = function(index) {
+        $scope.alerts.splice(index,1);
+    };
+
+    $scope.login = function(user, password){
+        var data;
+        data = {'user_name':user, 'user_password': password, 'login': 1};
+        console.log(data);
+        $http.post(Model.logonUrl, data)
+            .success(function(result) {
+                console.log('LoginController: Success');
+                console.log(result);
+                State.auth.init(result['scAccessToken'], result['id'], result['user_name']);
+                $location.path('/list');
+            })
+            .error(function(e){
+                console.log(e);
+            });
+
+    };
+
+});
+
+//TODO: Determine login page behavior: Automatically redirect if logged in.  Disconnect thru User menu only.  If so, remove ng-init on Google\index.html page
 jh.controller('MainController', function($scope, Model, State) {
 
     $scope.model = Model;
@@ -157,12 +199,14 @@ jh.controller('EditStoryController', function($scope, Model, State, $routeParams
 
 });
 
-jh.controller('ViewStoryController', function($scope, Model, State, $routeParams) {
+jh.controller('ViewStoryController', function($scope, Model, State, $routeParams, $location) {
 
     $scope.model = Model;
     $scope.state = State;
     State.page = "view";
-
+    if (!State.auth.isAuth()){
+        $location.path('/login');
+    }
     var id = $routeParams['id'];
     Model.getStory(id);
 });
