@@ -155,7 +155,7 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
 
 
 
-jh.factory('State', [ '$log', '$http', '$location', function($log, $http, $location){
+jh.factory('State', [ '$log', '$http', '$location', '$window', function($log, $http, $location, $window){
 
     stateMap = {
         currentController   : "",
@@ -168,8 +168,8 @@ jh.factory('State', [ '$log', '$http', '$location', function($log, $http, $locat
     stateMap.auth = {
         accessToken                 : null,
         thirdPartyAccessToken       : null,
-        currentUser                 : "tweedb",
-        currentUserId               : 2,
+        currentUser                 : "",
+        currentUserId               : 0,
 
         isAuth                      : function() {
             return this.accessToken ? true : false;
@@ -186,6 +186,11 @@ jh.factory('State', [ '$log', '$http', '$location', function($log, $http, $locat
             //   even when finding a function to manually recreate the apache_request_headers function
             // adding the following to .htaccess in local env and on godaddy allowed authorization header
             // # Pass Authorization headers to an environment variable RewriteRule .* - [E=HTTP_Authorization:%{HTTP:Authorization}]
+
+            //save this to session in case of browser refresh
+            $window.sessionStorage.setItem('storyCreateAuth', JSON.stringify(this));
+            console.log(JSON.stringify(this));
+            console.log($window.sessionStorage.getItem('storyCreateAuth'));
         },
         disconnect                  : function() {
             this.accessToken = null;
@@ -193,6 +198,7 @@ jh.factory('State', [ '$log', '$http', '$location', function($log, $http, $locat
             this.currentUser = "";
             this.currentUserId = "";
             $http.defaults.headers.common['Authorization'] = undefined;
+            $window.sessionStorage.clear();
             $location.path('/login');
         }
     };
@@ -203,6 +209,13 @@ jh.factory('State', [ '$log', '$http', '$location', function($log, $http, $locat
     stateMap.decAsync = function (){
         stateMap.asyncCount--;
     };
-
+    // checks for existing session if browser refresh.
+    function init() {
+        if($window.sessionStorage.getItem('storyCreateAuth')){
+            var auth = JSON.parse($window.sessionStorage.getItem('storyCreateAuth'));
+            stateMap.auth.init(auth.accessToken, auth.currentUserId, auth.currentUser, auth.thirdPartyAccessToken);
+        }
+    }
+    init();
     return stateMap;
 }]);

@@ -129,6 +129,7 @@ jh.controller('MainController', function($scope, Model, State) {
     $scope.model = Model;
     $scope.state = State;
     State.page = "";
+    console.log(JSON.stringify(State));
 
 });
 
@@ -137,6 +138,9 @@ jh.controller('ListController', function($scope, Model, State, $location) {
     $scope.model = Model;
     $scope.state = State;
     State.page = "list";
+    if (!State.auth.isAuth()){
+        $location.path('/login');
+    }
     Model.getStories();
 
     $scope.newStory = function() {
@@ -156,6 +160,9 @@ jh.controller('EditStoryController', function($scope, Model, State, $routeParams
 
     $scope.model = Model;
     $scope.state = State;
+    if (!State.auth.isAuth()){
+        $location.path('/login');
+    }
     State.page = "edit";
     $scope.ctrlState = {};
     $scope.ctrlState.isSaving = false;
