@@ -227,8 +227,8 @@ function auth_logon($ary){
     if (! isset ($ary['timeout'])) {
         $ary['timeout'] = TIMEOUT;
     }
-    $now = new DateTime();
-    $ary['timeout'] = intval($now->format('U')) + intval($ary['timeout']);
+    $nw = new DateTime();
+    $ary['timeout'] = intval($nw->format('U')) + intval($ary['timeout']);
 
     // Add user to AuthUsers
     try {
@@ -264,3 +264,25 @@ function auth_logon($ary){
     return $result;
 }
 
+function validTimeout($timeout){
+    $nw = new DateTime();
+    if(intval($nw->format('U')) <= $timeout){
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function validStoryAccessToken($accessToken){
+    global $cA_AuthUsers;
+    $db = getDbConnection($cA_AuthUsers);
+    $stmt = $db->prepare("SELECT * FROM " . TB_AUTHUSERS . " WHERE story_access_token = :accessToken");
+    $stmt->bindValue(':accessToken',$accessToken, PDO::PARAM_STR);
+    $stmt->execute();
+    if (! ($stmt->rowCount()!== 0)) {
+        return false;
+    } else {
+        $result=$stmt->fetchAll(PDO::FETCH_ASSOC);
+        return validTimeout($result[0]['timeout']);
+    }
+}

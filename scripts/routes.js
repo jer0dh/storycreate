@@ -34,3 +34,4 @@ jh.config(function ($routeProvider) {
 		});
 
 });
+//todo:  Look at using resolve to automatically route to login page - see http://www.sitepoint.com/implementing-authentication-angular-applications/?utm_content=bufferdcdc0&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer

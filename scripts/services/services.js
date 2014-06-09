@@ -181,9 +181,11 @@ jh.factory('State', [ '$log', '$http', '$location', function($log, $http, $locat
             if (typeof(thirdPartyAccessToken) !== 'undefined') {
                 this.thirdPartyAccessToken = thirdPartyAccessToken;
             }
-            // $http.defaults.headers.common['Authorization'] = "Bearer " + this.accessToken;
+            $http.defaults.headers.common['Authorization'] = "Bearer " + this.accessToken;
             // -Determined goDaddy php could not find this header (did not have apache_request_headers())
             //   even when finding a function to manually recreate the apache_request_headers function
+            // adding the following to .htaccess in local env and on godaddy allowed authorization header
+            // # Pass Authorization headers to an environment variable RewriteRule .* - [E=HTTP_Authorization:%{HTTP:Authorization}]
         },
         disconnect                  : function() {
             this.accessToken = null;
