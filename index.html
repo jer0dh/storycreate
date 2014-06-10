@@ -19,6 +19,47 @@
       <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+      <script type="text/ng-template" id="userSettingsContent.html">
+          <div class="modal-header">
+              <h3 class="modal-title">User Settings</h3>
+          </div>
+          <div class="modal-body">
+              <form class="form-horizontal">
+                  <fieldset>
+                      <!-- Text input-->
+                      <div class="form-group">
+                          <label class="col-md-4 control-label" for="email">Your Email Address</label>
+                          <div class="col-md-6">
+                              <input id="email" name="email" type="email" placeholder="joe@mail.com" class="form-control input-md">
+                              <span class="help-block">Enter in your email address</span>
+                          </div>
+                      </div>
+                      <!-- Text input-->
+                      <div class="form-group">
+                          <label class="col-md-4 control-label" for="userName">User Name</label>
+                          <div class="col-md-6">
+                              <input id="userName" name="userName" type="text" placeholder="jdoe" class="form-control input-md">
+                              <span class="help-block">Enter in your User Name</span>
+                          </div>
+                      </div>
+                      <!-- Text input-->
+                      <div class="form-group">
+                          <label class="col-md-4 control-label" for="imageUrl">Image URL</label>
+                          <div class="col-md-6">
+                              <input id="imageUrl" name="imageUrl" type="text" placeholder="http://www.gravatar.com/avatar/555896c.png" class="form-control input-md">
+                              <span class="help-block">Your Image URL if you have</span>
+                          </div>
+                      </div>
+                  </fieldset>
+              </form>
+
+          </div>
+          <div class="modal-footer">
+              <button class="btn btn-primary" ng-click="ok()">OK</button>
+              <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+          </div>
+
+      </script>
   </head>
   <body >
   <div ng-controller='MainController' class="navbar navbar-default navbar-static-top" role="navigation">
@@ -42,7 +83,7 @@
               <ul class="nav navbar-nav navbar-right">
                   <li ng-show="state.auth.isAuth()" class="dropdown" ><a class="dropdown-toggle">{{state.auth.currentUser}}</a>
                       <ul class="dropdown-menu">
-                          <li><a>Settings</a></li>
+                          <li><a ng-click="settings()">Settings</a></li>
                           <li><a ng-click="state.auth.disconnect()">Logout</a></li>
                       </ul>
                   </li>

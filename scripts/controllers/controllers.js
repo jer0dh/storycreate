@@ -122,16 +122,45 @@ jh.controller('LoginController', function($location, $scope, $http, Model, State
     };
 
 });
+jh.controller('ModalInstanceCtrl', function($scope, $modalInstance){
+    $scope.ok = function () {
+        $modalInstance.close();
+    };
 
+    $scope.cancel = function () {
+        $modalInstance.dismiss('canceled');
+    };
+
+
+});
 //TODO: Determine login page behavior: Automatically redirect if logged in.  Disconnect thru User menu only.  If so, remove ng-init on Google\index.html page
-jh.controller('MainController', function($scope, Model, State) {
+jh.controller('MainController', function($scope, Model, State, $modal) {
 
     $scope.model = Model;
     $scope.state = State;
     State.page = "";
     console.log(JSON.stringify(State));
 
+    // User Settings Modal
+    $scope.settings = function() {
+        var modalInstance = $modal.open({
+            templateUrl : 'userSettingsContent.html',
+            controller: 'ModalInstanceCtrl',
+            size: 'lg'
+
+        });
+
+        modalInstance.result.then(function(){
+            console.log('User Settings Modal closed with ok');
+        }, function(e){
+            console.log('User Settings Modal closed with cancel. e = ' + e);
+        });
+    };
+
+
 });
+
+
 
 jh.controller('ListController', function($scope, Model, State, $location) {
 

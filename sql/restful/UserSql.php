@@ -23,14 +23,6 @@ class UserSql {
         return $db;
     }
 
-//    private function isStoryExists($storyId){
-//        $db = $this->getDbConnection();
-//        $stmt = $db->prepare("SELECT * FROM stories WHERE story_id = :storyId");
-//        $stmt->bindValue(':storyId', $storyId, PDO::PARAM_INT);
-//        $stmt->execute();
-//
-//        return ($stmt->rowCount()!= 0);
-//    }
     public function __construct(){
         require_once('db.php');
         $this->db = new PDO('mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset=utf8', DB_USER, DB_PASS);

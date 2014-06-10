@@ -161,3 +161,26 @@ facebook, google, logon.php - authenticates user sends the following to a functi
             $username = getUserName('id');
 
             return (ScAccessToken, id, $username);
+
+<!---  END SERVER AUTHENTICATION IDEAS --->
+
+//TODO: Fix Alert in logon page
+
+<!---  BEGIN USER RESTful server IDEAS --->
+    purposes:   Obtain/update user settings (some stored as JSON string in a SQL field)
+                    ex. Obtain/update email address, font color, image URL or encoded, friends list
+                User can only read and update their own record.
+                A valid user can read user_name, user_id, and image URL to obtain a list of users
+
+<!---  END USER RESTful server IDEAS --->
+
+<!---  BEGIN Permissions IDEAS --->
+      permissions table: user_id, story_id, permissions - String('admin, editor, author, subscriber') -
+            admin - everything, add users
+            editor - add, change others posts,
+            author - add posts..not change others.
+            subscriber - view story, receive notifications of changes.
+            possible 'contributor' - someone who can suggest?
+      if story marked public, all users can read. otherwise, user must be listed in permissions table.
+
+      super_admin field in user table for administrator that can do anything?
