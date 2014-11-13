@@ -30,7 +30,16 @@ jh.controller('GPlusController', function($scope, Model, State, $location, $http
                 console.log("success");
                 console.log(result);
                 if (typeof(result['message']) === 'undefined') { // if not already signed in
-                    State.auth.init(result['scAccessToken'], result['id'], result['user_name'],'google-' + authResult['access_token']);
+                    var obj = {
+                        scAccessToken : result.scAccessToken,
+                        userId      : result.id,
+                        userName    : result.user_name,
+                        thirdPartyAccessToken: 'google-' + result['access_token']
+                    };
+                    if (! typeof(result['user_email'])==='undefined') {
+                        obj['userEmail'] = result['user_email'];
+                    }
+                    State.auth.init(obj);
                     $('#authOps').show('slow');
                     $location.path('/list');
                 } else {
@@ -68,28 +77,10 @@ jh.controller('GPlusController', function($scope, Model, State, $location, $http
                 console.log(e);
             });
     };
-    $scope.renderProfile = function() {
-        var request = gapi.client.plus.people.get( {'userId' : 'me'} );
-        request.execute( function(profile) {
-            $('#profile').empty();
-            if (profile.error) {
-                $('#profile').append(profile.error);
-                return;
-            }
-            $('#profile').append(
-                $('<p><img src=\"' + profile.image.url + '\"></p>'));
-            $('#profile').append(
-                $('<p>Hello ' + profile.displayName + '!<br />Tagline: ' +
-                    profile.tagline + '<br />About: ' + profile.aboutMe + '</p>'));
-            if (profile.cover && profile.coverPhoto) {
-                $('#profile').append(
-                    $('<p><img src=\"' + profile.cover.coverPhoto.url + '\"></p>'));
-            }
-        });
-    };
+
 });
 
-jh.controller('LoginController', function($location, $scope, $http, Model, State){
+jh.controller('LoginController', function($location, $scope, $http, Model, State,UserModel){
     $scope.model = Model;
     $scope.state = State;
     State.page = "login";
@@ -112,7 +103,16 @@ jh.controller('LoginController', function($location, $scope, $http, Model, State
             .success(function(result) {
                 console.log('LoginController: Success');
                 console.log(result);
-                State.auth.init(result['scAccessToken'], result['id'], result['user_name']);
+                var obj = {
+                    scAccessToken: result['scAccessToken'],
+                    userId : result['id'],
+                    userName : result['user_name']
+                };
+                if (! typeof(result['user_email'])==='undefined') {
+                    obj['userEmail'] = result['user_email'];
+                }
+                State.auth.init(obj);
+                UserModel.getMyUserSettings(State.auth.userId);
                 $location.path('/list');
             })
             .error(function(e){
@@ -122,13 +122,46 @@ jh.controller('LoginController', function($location, $scope, $http, Model, State
     };
 
 });
-jh.controller('ModalInstanceCtrl', function($scope, $modalInstance){
-    $scope.ok = function () {
+jh.controller('ModalInstanceCtrl', function($scope, $modalInstance, items, State, UserModel){
+
+    $scope.items = State.auth;
+    console.log('modalinstancectrl');
+    console.log(items);
+    originalItems = _.clone(items);
+
+    $scope.okSuccess = function(){
+        State.auth.userName = $scope.items.userName;
+        State.auth.userEmail = $scope.items.userEmail;
+        State.imageUrl = $scope.items.imageUrl;
         $modalInstance.close();
+    };
+    $scope.okError = function(e) {
+        console.log('error saving User:');
+        console.log(e);
+    };
+    $scope.ok = function () {
+        // check if data changed
+        if (!(_.isEqual(originalItems, $scope.items))){
+            // if username changed, check if existing, alert if so and exit function
+            //    if not existing, save user, update state's username and image
+            // if email/image changed save user
+            var user = {};
+            user.user_name = $scope.items.userName;
+            user.user_email = $scope.items.userEmail;
+            user.image_url = $scope.items.imageUrl;
+            user.userId = State.auth.userId;
+
+            UserModel.updateUser(user, $scope.okSuccess, $scope.okError);
+
+        } else {
+            $modalInstance.close();
+        }
+
+
     };
 
     $scope.cancel = function () {
-        $modalInstance.dismiss('canceled');
+        $modalInstance.dismiss('canceled by user');
     };
 
 
@@ -139,14 +172,24 @@ jh.controller('MainController', function($scope, Model, State, $modal) {
     $scope.model = Model;
     $scope.state = State;
     State.page = "";
-    console.log(JSON.stringify(State));
+
+    $scope.items = {};
 
     // User Settings Modal
     $scope.settings = function() {
+        $scope.items.userEmail = State.auth.userEmail;
+        $scope.items.userName = State.auth.userName;
+        $scope.items.imageUrl = State.imageUrl;
+        console.log("in settings()");
+        console.log($scope.items);
         var modalInstance = $modal.open({
             templateUrl : 'userSettingsContent.html',
             controller: 'ModalInstanceCtrl',
-            size: 'lg'
+            size: 'lg',
+            resolve: { items : function() {
+                return $scope.items;
+                }
+            }
 
         });
 

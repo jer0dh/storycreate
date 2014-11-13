@@ -286,3 +286,27 @@ function validStoryAccessToken($accessToken){
         return validTimeout($result[0]['timeout']);
     }
 }
+
+function getUserIdFromAccessToken($accessToken){
+    global $cA_AuthUsers;
+    $db = getDbConnection($cA_AuthUsers);
+    $stmt = $db->prepare("SELECT * FROM " . TB_AUTHUSERS . " WHERE story_access_token = :accessToken");
+    $stmt->bindValue(':accessToken',$accessToken, PDO::PARAM_STR);
+    $stmt->execute();
+    if (! ($stmt->rowCount()!== 0)) {
+        return 0;
+    } else {
+        $result=$stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result[0]['user_id'];
+    }
+}
+
+function isAdmin($userId) {
+    global $cA_Users;
+    $db = getDbConnection($cA_Users);
+    $stmt = $db->prepare("SELECT admin FROM " . TB_USERS . " WHERE user_id = :userId");
+    $stmt->bindValue(':userId', $userId, PDO::PARAM_STR);
+    $stmt->execute();
+    $result=$stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $result[0]['admin'] ? true : false;
+}

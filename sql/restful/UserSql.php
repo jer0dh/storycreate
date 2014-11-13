@@ -22,7 +22,27 @@ class UserSql {
         $this->db = $db;
         return $db;
     }
+    private function isUserExists($userId){
+        $db = $this->getDbConnection();
+        $stmt = $db->prepare("SELECT * FROM users WHERE user_id = :userId");
+        $stmt->bindValue(':userId', $userId, PDO::PARAM_INT);
+        $stmt->execute();
 
+        return ($stmt->rowCount()!= 0);
+    }
+    private function getPdoType($var){
+        $type = gettype($var);
+        switch ($type) {
+            case "string":
+                return PDO::PARAM_STR;
+            case "integer":
+                return PDO::PARAM_INT;
+            case "boolean":
+                return PDO::PARAM_INT;
+            default:
+                return PDO::PARAM_STR;
+        }
+    }
     public function __construct(){
         require_once('db.php');
         $this->db = new PDO('mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset=utf8', DB_USER, DB_PASS);
@@ -40,7 +60,7 @@ class UserSql {
         } else {
             $searchTerm['field'] = 'username';
         }
-        $stmt = $db->prepare("SELECT user_id as id, username as name, email FROM users WHERE ".$searchTerm['field']." = :value");
+        $stmt = $db->prepare("SELECT user_id, user_name, user_email FROM users WHERE ".$searchTerm['field']." = :value");
         $stmt->bindValue(':value', $user, PDO::PARAM_STR);
         $stmt->execute();
         $results=$stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -50,7 +70,7 @@ class UserSql {
             $r['error'] = "User Not Found";
             return $r;
         }
-        $r['success'] = $results;
+        $r['success'] = $results[0];
         return $r;
     }
 
@@ -58,7 +78,7 @@ class UserSql {
     public function getUsers() {
         $db = $this->getDbConnection();
 
-        $stmt = $db->prepare("SELECT user_id as id, username as name, email FROM users");
+        $stmt = $db->prepare("SELECT user_id, user_name, user_email FROM users");
         $stmt->execute();
         $results=$stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -71,126 +91,54 @@ class UserSql {
         return $r;
     }
 
-    /**
-     * returns the story saved into database. The returned id of the story will be the value the database gave it upon insertion.
-     *
-     *
-     * NOTE: On Date conversions: When sending dates from JavaScript:
-     * h = new Date(); // h is a date with value: Wed May 14 2014 10:03:06 GMT-0500 (Central Daylight Time)
-     * i = JSON.stringify(h);  // i is now a quoted string with value: ""2014-05-14T15:03:06.823Z""
-     * j = JSON.parse(i);  // j is now a string with value: "2014-05-14T15:03:06.823Z"
-     *
-     * j is the format we need the date to be to insert into SQL database.
-     *
-     * @param $story
-     *    // an associative array
-     * @return array
-     *   NOTE: date will be in the format of a string like "2014-05-14T15:03:06.823Z".  If a JavaScript date is needed, run new Date("2014-05-14T15:03:06.823Z");
-     */
-    public function newStory($story) {
-        $results = array();
-        // if id is already set, check if existing story
-        if (isset($story['id']) && $story['id'] > 0 && $this->isStoryExists($story['id'])) {
-           $results['error'] = 'Cannot add new Story: Story already exists. Use PUT to update a story';
-           return $results;
-        }
-
-        $db = $this->getDbConnection();
-        $stmt = $db->prepare("INSERT INTO stories SET story_title = :title, story_description = :description, date_created = STR_TO_DATE(:dateCreated, '%Y-%m-%dT%H:%i:%s'), date_modified = STR_TO_DATE(:dateModified, '%Y-%m-%dT%H:%i:%s'), is_public = :isPublic");
-        $stmt->bindValue(':title', $story['title'], PDO::PARAM_STR);
-        $stmt->bindValue(':description', $story['description'], PDO::PARAM_STR);
-        $stmt->bindValue(':dateCreated', $story['dateCreated'], PDO::PARAM_STR);
-        $stmt->bindValue(':dateModified', $story['dateModified'], PDO::PARAM_STR);
-        $stmt->bindValue(':isPublic', $story['isPublic'], PDO::PARAM_BOOL);
-        $stmt->execute();
-        $last = $db->lastInsertId();
-        $story['id'] = $last;
-
-        // update the story content.  Delete first then re add
-        $storyContent = isset($story['storyContent']) ? $story['storyContent'] : [];
-        if(count($storyContent) > 0) {
-            // delete existing content
-            $stmt = $db->prepare("DELETE FROM story_content WHERE story_id = :storyId");
-            $stmt->bindValue(':storyId', $story['id'], PDO::PARAM_INT);
-            $stmt->execute();
-
-            // add Story Content to SQL table
-            for($i = 0; $i < count($storyContent); $i++) {
-                $stmt = $db->prepare("INSERT INTO  story_content (story_id, user_id, content, cdate, corder) VALUES(:storyId, :userId, :content, :date, :corder)");
-                $stmt->bindValue(':storyId', $story['id'], PDO::PARAM_INT);
-                $stmt->bindValue(':userId', $storyContent[$i]['userId'], PDO::PARAM_INT);
-                $stmt->bindValue(':content', $storyContent[$i]['content'], PDO::PARAM_STR);
-                $stmt->bindValue(':date', $storyContent[$i]['date'], PDO::PARAM_STR);
-                $stmt->bindValue(':corder', $i, PDO::PARAM_INT);
-                $stmt->execute();
-            }
-
-
-        }
-
-        $results['story'] = $story;
-        $r = array();
-        $r['success'] = $results;
-        return $r;
-    }
-
-    /**
-     * updates the database with the $story associative array.
-     *
-     * if $story['storyContent'] does not exist, then only the story meta is updated. If $story['storyContent'] does exist, then previous storyContent of story is deleted from database and new storyContent is added.
-     *
-     * @param $story
-     * @return array
-     */
-    public function updateStory($story){
+    public function updateUser($user){
         //
         $db = $this->getDbConnection();
         $results = array();
         // make sure id is set
-        if (!isset($story['id'])){
-            $results['error'] = "Cannot update Story: id does not exist.";
+        if (!isset($user['userId'])){
+            $results['error'] = "Cannot update User: userId does not exist.";
             return $results;
         }
         // make sure id is not zero and that the story exists
-        if ($story['id'] == 0 || !$this->isStoryExists($story['id'])) {
-            $results['error'] = 'Cannot update Story: Story does not exist or id = 0. Use POST to INSERT a story';
+        $userId = $user['userId'];
+        if ($userId == 0 || !$this->isUserExists($userId)) {
+            $results['error'] = 'Cannot update User: UserId '. $userId.' does not exist or id = 0. Use POST to INSERT a new User';
             return $results;
         }
+        //todo: check if email address or user_name exists on records where user_id != $userId
 
-        // update Story Meta
-        $stmt = $db->prepare("UPDATE stories SET story_title = :title, story_description = :description, date_created = STR_TO_DATE(:dateCreated, '%Y-%m-%dT%H:%i:%s'), date_modified = STR_TO_DATE(:dateModified, '%Y-%m-%dT%H:%i:%s'), is_public = :isPublic WHERE story_id = :storyId");
-        $stmt->bindValue(':storyId', $story['id'], PDO::PARAM_INT);
-        $stmt->bindValue(':title', $story['title'], PDO::PARAM_STR);
-        $stmt->bindValue(':description', $story['description'], PDO::PARAM_STR);
-        $stmt->bindValue(':dateCreated', $story['dateCreated'], PDO::PARAM_STR);
-        $stmt->bindValue(':dateModified', $story['dateModified'], PDO::PARAM_STR);
-        $stmt->bindValue(':isPublic', $story['isPublic'], PDO::PARAM_BOOL);
-        $stmt->execute();
-
-        //Update Story Content if $story['storyContent'] exists
-        if(isset ($story['storyContent'])){
-            // delete existing story content
-            $stmt = $db->prepare("DELETE FROM story_content WHERE story_id = :storyId");
-            $stmt->bindValue(':storyId', $story['id'], PDO::PARAM_INT);
-            $stmt->execute();
-
-            $storyContent = $story['storyContent'];
-
-            // Insert story content, using $i for the corder field
-            for($i=0; $i < count($storyContent); $i++) {
-                $stmt = $db->prepare("INSERT INTO  story_content (story_id, user_id, content, cdate, corder) VALUES(:storyId, :userId, :content, STR_TO_DATE(:date, '%Y-%m-%dT%H:%i:%s'), :corder)");
-                $stmt->bindValue(':storyId', $story['id'], PDO::PARAM_INT);
-                $stmt->bindValue(':userId', $storyContent[$i]['userId'], PDO::PARAM_INT);
-                $stmt->bindValue(':content', $storyContent[$i]['content'], PDO::PARAM_STR);
-                $stmt->bindValue(':date', $storyContent[$i]['date'], PDO::PARAM_STR);
-                $stmt->bindValue(':corder', $i, PDO::PARAM_INT);
-                $stmt->execute();
-            }
+        // update User
+        unset($user['userId']);
+        unset($user['admin']);  //users can't make themselves admin
+        $stmtString = 'UPDATE users SET ';
+        $comma = false;
+        foreach($user as $key => $value){
+            if ($comma) { $stmtString .= ', ';}
+            $stmtString .= $key . ' = :' . $key .'1';
+            $comma = true;
         }
+        $stmtString .= ' WHERE user_id = :user_id';
+        // echo $stmtString;
 
-        $results['success'] = "Story with id: " . $story['id'] . " updated.";
+        $stmt = $db->prepare($stmtString);
+
+        foreach($user as $key => $value){
+         //   echo 'bindValue(\':' . $key . '1\', ' . $value . ', ' . $this->getPdoType($value);
+            $stmt->bindValue(':'.$key.'1', $value, $this->getPdoType($value));
+        }
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_STR);
+        try {
+        $stmt->execute();
+        } catch (Exception $e) {
+            $result['error'] = 'In UpdateUser: ' . $e->getMessage();
+        }
+        ob_start();
+        $stmt->debugDumpParams();
+        $results['success'] = "User with id: " . $userId . " updated with" . ob_get_flush();
         return $results;
     }
+
 
     public function deleteStory($id){
         $db = $this->getDbConnection();

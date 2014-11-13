@@ -93,6 +93,8 @@ if (!isset($_SERVER['HTTP_Authorization'])){
                 header('Content-Type: application/json');
                 if (isset ($result['error'])) {
                     header('HTTP/1.1 500 Error');
+                } else {
+                    header('HTTP/1.1 200 OK');
                 }
                 echo $json;
                 return;

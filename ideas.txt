@@ -184,3 +184,4 @@ facebook, google, logon.php - authenticates user sends the following to a functi
       if story marked public, all users can read. otherwise, user must be listed in permissions table.
 
       super_admin field in user table for administrator that can do anything?
+<!---  END Permissions IDEAS --->

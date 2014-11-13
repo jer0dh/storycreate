@@ -1,3 +1,58 @@
+jh.factory('UserModel', [ '$http', 'State', function($http, State){
+
+    var user = {};
+    var apiUserUrl = "http://localhost/api/user/";
+    user.currentUser = {
+        userId          :  0,
+        userEmail       : null,
+        userName        : null,
+        imageUrl        : null
+    };
+
+    user.updateUser = function(user, sCallback, eCallback) {
+        //deep copy of story and changes date formats to strings
+        var cUser = JSON.parse(JSON.stringify(user));
+
+        State.addAsync();
+        $http.put(apiUserUrl, cUser)
+            .success(function(results){
+                State.decAsync();
+                console.log("results of PUT");
+                console.log(results);
+                if(sCallback) { sCallback();}
+            })
+            .error(function(message){
+                State.decAsync();
+
+                if(eCallback) { eCallback();}
+                console.warn("errorNewStory");
+                console.warn(message);
+            })
+    };
+
+    user.getMyUserSettings = function(userId, sCallback, eCallback) {
+        State.addAsync();
+        console.log("getMyUserSettings called with userId = " + userId);
+        $http.get(apiUserUrl + userId)
+            .success(function successGetStories(results){
+                console.log(results);
+                State.auth.userName = results['success'].user_name;
+                State.auth.userEmail = results['success'].user_email;
+                State.auth.imageUrl = results['success'].image_url;
+                console.log(State.auth.userEmail);
+                State.decAsync();
+                if(sCallback) { sCallback();}
+            }).
+            error(function errorGetStories(message){
+                console.log("errorGetStory");
+                console.log(message);
+                State.decAsync();
+                if(eCallback) { eCallback();}
+            });
+    };
+
+    return user;
+}]);
 
 jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
 
@@ -144,10 +199,10 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
     data.addNewContent = function(newContent, callback) {
 
         data.story.storyContent.push({
-            userId          : State.auth.currentUserId,
+            userId          : State.auth.userId,
             content         : newContent,
             date            : new Date(),
-            userName        : State.auth.currentUser
+            userName        : State.auth.userName
         });
 
         data.saveStory(data.story, callback);
@@ -195,8 +250,10 @@ jh.factory('State', [ '$log', '$http', '$location', '$window', function($log, $h
     stateMap.auth = {
         accessToken                 : null,
         thirdPartyAccessToken       : null,
-        currentUser                 : "",
-        currentUserId               : 0,
+        userName                 : "",
+        userId               : 0,
+        userEmail            : null,
+        imageUrl                    : null,
 
         // simple function for controllers to determine if user logged in
         // RESTful server will validate access token during an requests to it
@@ -206,12 +263,15 @@ jh.factory('State', [ '$log', '$http', '$location', '$window', function($log, $h
 
         // called after successful login or after a refresh when $window.sessionStorage has existing
         // login data.
-        init                        : function(scAccessToken, userId, userName, thirdPartyAccessToken) {
-            this.accessToken = scAccessToken;
-            this.currentUserId = userId;
-            this.currentUser = userName;
-            if (typeof(thirdPartyAccessToken) !== 'undefined') {
-                this.thirdPartyAccessToken = thirdPartyAccessToken;
+        init                        : function(obj) {
+            this.accessToken = obj.scAccessToken;
+            this.userId = obj.userId;
+            this.userName = obj.userName;
+            if (typeof(obj.thirdPartyAccessToken) !== 'undefined') {
+                this.thirdPartyAccessToken = obj.thirdPartyAccessToken;
+            }
+            if (typeof(obj.userEmail) !== 'undefined') {
+                this.userEmail = obj.userEmail;
             }
             $http.defaults.headers.common['Authorization'] = "Bearer " + this.accessToken;
             // -Determined goDaddy php could not find this header (did not have apache_request_headers())
@@ -228,12 +288,13 @@ jh.factory('State', [ '$log', '$http', '$location', '$window', function($log, $h
         disconnect                  : function() {
             this.accessToken = null;
             this.thirdPartyAccessToken = null;
-            this.currentUser = "";
-            this.currentUserId = "";
+            this.userName = "";
+            this.userId = "";
             $http.defaults.headers.common['Authorization'] = undefined;
             $window.sessionStorage.clear();
             $location.path('/login');
         }
+
         //todo: add php function to be called to remove scAccessToken from sql database or add function to remove old entries
     };
     // called whenever model makes an asych call - to be used to create a spinner or some other indication
@@ -248,7 +309,15 @@ jh.factory('State', [ '$log', '$http', '$location', '$window', function($log, $h
     function init() {
         if($window.sessionStorage.getItem('storyCreateAuth')){
             var auth = JSON.parse($window.sessionStorage.getItem('storyCreateAuth'));
-            stateMap.auth.init(auth.accessToken, auth.currentUserId, auth.currentUser, auth.thirdPartyAccessToken);
+            var obj = {
+                scAccessToken : auth.accessToken,
+                userId      : auth.userId,
+                userName    : auth.userName,
+                thirdPartyAccessToken: auth.thirdPartyAccessToken,
+                userEmail   : auth.userEmail
+            }
+            stateMap.auth.init(obj);
+         //   UserModel.getMyUserSettings(auth.userId);
         }
     }
     init();
