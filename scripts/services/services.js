@@ -1,7 +1,8 @@
 jh.factory('UserModel', [ '$http', 'State', function($http, State){
 
     var user = {};
-    var apiUserUrl = "http://localhost/api/user/";
+    var apiUserUrl = "http://localhost:8080/StoryCreate/api/login/";
+    var apiMeUrl = "http://localhost:8080/StoryCreate/api/me";
     user.currentUser = {
         userId          :  0,
         userEmail       : null,
@@ -33,10 +34,11 @@ jh.factory('UserModel', [ '$http', 'State', function($http, State){
     user.getMyUserSettings = function(userId, sCallback, eCallback) {
         State.addAsync();
         console.log("getMyUserSettings called with userId = " + userId);
-        $http.get(apiUserUrl + userId)
+        $http.get(apiMeUrl)
             .success(function successGetStories(results){
                 console.log(results);
-                State.auth.userName = results['success'].user_name;
+                State.auth.userId = results.id;
+                State.auth.userName = results.username;
                 State.auth.userEmail = results['success'].user_email;
                 State.auth.imageUrl = results['success'].image_url;
                 console.log(State.auth.userEmail);
@@ -64,10 +66,11 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
     var data = {};
 
     // Resources used in model (private)
-    var apiStoryUrl = 'http://localhost/api/story/';
+    var apiStoryUrl = 'http://localhost:8080/StoryCreate/api/story/';
+    var apiStoryContentUrl = 'http://localhost:8080/StoryCreate/api/storyContent';
 
     // Resources used in app
-    data.logonUrl = './sql/auth/logon/logon.php';
+    data.logonUrl = 'http://localhost:8080/StoryCreate/api/login';
     data.googleSignInUrl = 'http://localhost/storycreate/sql/auth/google/signin.php';
 
     data.createBlankStory = function() {
@@ -75,7 +78,7 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
             id: 0,
             title: '',
             dateCreated: new Date(),
-            dateModified: new Date(),
+            lastUpdated: new Date(),
             description: '',
             isPublic: true,
             storyContent: [	]
@@ -86,8 +89,9 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
             {
                 id: 0,
                 title: '',
+                owner: {id: null, name: null},
                 dateCreated: new Date(),
-                dateModified: null,
+                lastUpdated: null,
                 description: '',
                 isPublic: true,
                 storyContent: [	]
@@ -108,7 +112,7 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
         State.addAsync();
         $http.get(apiStoryUrl)
             .success(function successGetStories(results){
-                data.storyList = results['success'];
+                data.storyList = results;
                 State.decAsync();
             }).
             error(function errorGetStories(message){
@@ -125,7 +129,7 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
         State.addAsync();
         $http.get(apiStoryUrl + id)
             .success(function successGetStories(results){
-                data.story = results['success'];
+                data.story = results;
                 State.decAsync();
             }).
             error(function errorGetStories(message){
@@ -143,11 +147,10 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
      */
     data.newStory = function(story, callback) {
         var cStory = JSON.parse(JSON.stringify(story));
-        var pdata = {'story' : cStory};
         State.addAsync();
-        $http.post(apiStoryUrl, pdata)
+        $http.post(apiStoryUrl, cStory)
             .success(function(results){
-                story.id = results['success'].story.id;
+                story.id = results.id;
                 State.decAsync();
 
                 if(callback) { callback();}
@@ -171,10 +174,9 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
     data.saveStory = function(story, callback) {
         //deep copy of story and changes date formats to strings
         var cStory = JSON.parse(JSON.stringify(story));
-        var pdata = {'story' : cStory};
 
         State.addAsync();
-        $http.put(apiStoryUrl, pdata)
+        $http.put(apiStoryUrl, cStory)
             .success(function(results){
                 State.decAsync();
 
@@ -188,6 +190,20 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
 
 
     };
+    data.saveNewStoryContent = function(newStoryContent, callback) {
+        State.addAsync();
+        $http.post(apiStoryContentUrl, newStoryContent)
+            .success(function(results){
+                State.decAsync();
+                data.story.storyContent.push(newStoryContent);
+                if(callback) {callback(); }
+            })
+            .error(function(message) {
+                State.decAsync();
+                console.warn("errorNewStoryContent");
+                console.warn(message);
+            })
+    };
 
     /**
      * Adds new content to story by pushing it onto array.  Calls saveStory to save on server
@@ -197,15 +213,15 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
      * @param callback
      */
     data.addNewContent = function(newContent, callback) {
-
-        data.story.storyContent.push({
-            userId          : State.auth.userId,
+//TODO Need to pass in story id with content
+        var newStoryContent = {
+            author           : {id : State.auth.userId, userName: State.auth.userName},
             content         : newContent,
-            date            : new Date(),
-            userName        : State.auth.userName
-        });
+            dateCreated     : new Date()
+        };
 
-        data.saveStory(data.story, callback);
+
+        data.saveNewStoryContent(newStoryContent, callback);
     };
 
     /**

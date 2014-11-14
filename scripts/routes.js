@@ -18,7 +18,7 @@ jh.config(function ($routeProvider) {
 			templateUrl: './views/editStory.html'
 		}).
         when('/login', {
-            controller: 'GPlusController',
+            controller: 'LoginController',
             templateUrl: './views/login.html'
         }).
 //			when('/login', {

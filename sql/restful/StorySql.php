@@ -51,7 +51,7 @@ class StorySql {
     public function getStory($storyId) {
         $db = $this->getDbConnection();
         //Get Story meta info
-        $stmt = $db->prepare("SELECT story_title as title, story_id as id, story_description as description, DATE_FORMAT(date_created, '%Y-%m-%dT%H:%i:%sZ') as dateCreated, DATE_FORMAT(date_modified, '%Y-%m-%dT%H:%i:%sZ') as dateModified, is_public as isPublic FROM stories WHERE story_id = :storyId");
+        $stmt = $db->prepare("SELECT story_title as title, story_id as id, story_description as description, DATE_FORMAT(date_created, '%Y-%m-%dT%H:%i:%sZ') as dateCreated, DATE_FORMAT(date_modified, '%Y-%m-%dT%H:%i:%sZ') as lastUpdated, is_public as isPublic FROM stories WHERE story_id = :storyId");
         $stmt->bindValue(':storyId', $storyId, PDO::PARAM_INT);
         $stmt->execute();
         $results=$stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -86,7 +86,7 @@ class StorySql {
     public function getStories() {
         $db = $this->getDbConnection();
 
-        $stmt = $db->prepare("SELECT story_title as title, story_id as id, story_description as description, DATE_FORMAT(date_created, '%Y-%m-%dT%H:%i:%sZ') as dateCreated, DATE_FORMAT(date_modified, '%Y-%m-%dT%H:%i:%sZ') as dateModified,  is_public as isPublic from stories");
+        $stmt = $db->prepare("SELECT story_title as title, story_id as id, story_description as description, DATE_FORMAT(date_created, '%Y-%m-%dT%H:%i:%sZ') as dateCreated, DATE_FORMAT(date_modified, '%Y-%m-%dT%H:%i:%sZ') as lastUpdated,  is_public as isPublic from stories");
         $stmt->execute();
         $results=$stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -135,12 +135,12 @@ class StorySql {
 
         try {
         $db = $this->getDbConnection();
-        $stmt = $db->prepare("INSERT INTO stories (story_title, story_description, date_created, date_modified, is_public) VALUES (:title, :description, STR_TO_DATE(:dateCreated, '%Y-%m-%dT%H:%i:%s'), STR_TO_DATE(:dateModified, '%Y-%m-%dT%H:%i:%s'), :isPublic)");
+        $stmt = $db->prepare("INSERT INTO stories (story_title, story_description, date_created, date_modified, is_public) VALUES (:title, :description, STR_TO_DATE(:dateCreated, '%Y-%m-%dT%H:%i:%s'), STR_TO_DATE(:lastUpdated, '%Y-%m-%dT%H:%i:%s'), :isPublic)");
    //      $stmt = $db->prepare("INSERT INTO stories (story_title, story_description, is_public) VALUES (:title, :description, :isPublic)");
         $stmt->bindValue(':title', $story['title'], PDO::PARAM_STR);
         $stmt->bindValue(':description', $story['description'], PDO::PARAM_STR);
         $stmt->bindValue(':dateCreated', $story['dateCreated'], PDO::PARAM_STR);
-        $stmt->bindValue(':dateModified', $story['dateModified'], PDO::PARAM_STR);
+        $stmt->bindValue(':lastUpdated', $story['lastUpdated'], PDO::PARAM_STR);
       $stmt->bindValue(':isPublic', $story['isPublic'], PDO::PARAM_INT);
             // PARAM_BOOL would not work for this.  json_decode changes boolean true to 1 and false to blank.
             // This causes the INSERT to not work.
@@ -205,12 +205,12 @@ class StorySql {
         }
 
         // update Story Meta
-        $stmt = $db->prepare("UPDATE stories SET story_title = :title, story_description = :description, date_created = STR_TO_DATE(:dateCreated, '%Y-%m-%dT%H:%i:%s'), date_modified = STR_TO_DATE(:dateModified, '%Y-%m-%dT%H:%i:%s'), is_public = :isPublic WHERE story_id = :storyId");
+        $stmt = $db->prepare("UPDATE stories SET story_title = :title, story_description = :description, date_created = STR_TO_DATE(:dateCreated, '%Y-%m-%dT%H:%i:%s'), date_modified = STR_TO_DATE(:lastUpdated, '%Y-%m-%dT%H:%i:%s'), is_public = :isPublic WHERE story_id = :storyId");
         $stmt->bindValue(':storyId', $story['id'], PDO::PARAM_INT);
         $stmt->bindValue(':title', $story['title'], PDO::PARAM_STR);
         $stmt->bindValue(':description', $story['description'], PDO::PARAM_STR);
         $stmt->bindValue(':dateCreated', $story['dateCreated'], PDO::PARAM_STR);
-        $stmt->bindValue(':dateModified', $story['dateModified'], PDO::PARAM_STR);
+        $stmt->bindValue(':lastUpdated', $story['lastUpdated'], PDO::PARAM_STR);
         $stmt->bindValue(':isPublic', $story['isPublic'], PDO::PARAM_INT);
         $stmt->execute();
 

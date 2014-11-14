@@ -97,16 +97,16 @@ jh.controller('LoginController', function($location, $scope, $http, Model, State
 
     $scope.login = function(user, password){
         var data;
-        data = {'user_name':user, 'user_password': password, 'login': 1};
+        data = {'username':user, 'password': password, 'login': 1};
         console.log(data);
         $http.post(Model.logonUrl, data)
             .success(function(result) {
                 console.log('LoginController: Success');
                 console.log(result);
                 var obj = {
-                    scAccessToken: result['scAccessToken'],
-                    userId : result['id'],
-                    userName : result['user_name']
+                    scAccessToken: result['access_token'],
+                    userId : result['username'],
+                    userName : result['username']
                 };
                 if (! typeof(result['user_email'])==='undefined') {
                     obj['userEmail'] = result['user_email'];
@@ -268,7 +268,7 @@ jh.controller('EditStoryController', function($scope, Model, State, $routeParams
         } else {
             Model.saveStory(Model.story, afterSavingStory);
         }
-    }
+    };
 
     $scope.saveNewContent = function() {
         $scope.ctrlState.isSaving = true;
