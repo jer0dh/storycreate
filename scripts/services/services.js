@@ -113,6 +113,7 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
         $http.get(apiStoryUrl)
             .success(function successGetStories(results){
                 data.storyList = results;
+                console.log(results);
                 State.decAsync();
             }).
             error(function errorGetStories(message){
@@ -176,10 +177,10 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
         var cStory = JSON.parse(JSON.stringify(story));
 
         State.addAsync();
-        $http.put(apiStoryUrl, cStory)
+        $http.put(apiStoryUrl + story.id, cStory)
             .success(function(results){
                 State.decAsync();
-
+                console.log(results);
                 if(callback) { callback();}
             })
             .error(function(message){
@@ -212,12 +213,13 @@ jh.factory('Model', [ '$log', '$http', 'State', function($log, $http, State) {
      * @param newContent
      * @param callback
      */
-    data.addNewContent = function(newContent, callback) {
+    data.addNewContent = function(story, newContent, callback) {
 //TODO Need to pass in story id with content
         var newStoryContent = {
             author           : {id : State.auth.userId, userName: State.auth.userName},
             content         : newContent,
-            dateCreated     : new Date()
+            dateCreated     : new Date(),
+            story           :  {id: story.id}
         };
 
 

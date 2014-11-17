@@ -272,7 +272,7 @@ jh.controller('EditStoryController', function($scope, Model, State, $routeParams
 
     $scope.saveNewContent = function() {
         $scope.ctrlState.isSaving = true;
-        Model.addNewContent($scope.ctrlState.newContent, afterSavingStory);
+        Model.addNewContent(Model.story, $scope.ctrlState.newContent, afterSavingStory);
 
     }
 
